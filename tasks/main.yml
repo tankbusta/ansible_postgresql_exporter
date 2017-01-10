@@ -1,0 +1,58 @@
+---
+
+- name: use systemd for Ubuntu >= 16.04
+  set_fact:
+    use_systemd: true
+  when: (ansible_distribution == "Ubuntu" and ansible_distribution_version|int >= 16) and use_systemd is not defined
+
+- name: use upstart for Ubuntu < 16.04
+  set_fact:
+    use_systemd: false
+  when: (ansible_distribution == "Ubuntu" and ansible_distribution_version|int < 16) and use_systemd is not defined
+
+- name: ensure install directory exists
+  file:
+    path: '{{ postgres_exporter_install_path }}'
+    mode: 0755
+    owner: '{{ postgres_exporter_user }}'
+    group: '{{ postgres_exporter_group }}'
+    state: directory
+
+- name: download exporter to temp directory
+  get_url:
+    url: '{{ postgres_exporter_binary_url }}'
+    dest: '{{ postgres_exporter_install_path }}/'
+    owner: '{{ postgres_exporter_user }}'
+    group: '{{ postgres_exporter_group }}'
+    mode: 'u+rwx'
+
+- name: create env.vars file
+  template:
+    src: "templates/env.vars.j2"
+    dest: "{{ postgres_exporter_install_path }}/env.vars"
+    owner: '{{ postgres_exporter_user }}'
+    group: '{{ postgres_exporter_group }}'
+    mode: 0600
+  register: vars_file_changed
+
+- name: copy systemd config to server
+  template:
+    src: "templates/init_systemd.service.j2"
+    dest: "/lib/systemd/system/postgresql_exporter.service"
+  when: use_systemd
+
+- name: copy upstart config to server
+  template:
+    src: "templates/init_upstart.conf.j2"
+    dest: "/etc/init/postgresql_exporter.conf"
+  when: not use_systemd|bool
+
+- name: ensure systemd daemon is reload on changed (systemd machines only)
+  command: systemctl daemon-reload
+  when: vars_file_changed.changed and use_systemd
+
+- name: set postgresql_exporter status and start (if not already)
+  service:
+    name: postgresql_exporter
+    enabled: yes
+    state: started

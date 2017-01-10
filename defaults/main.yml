@@ -1,0 +1,26 @@
+---
+
+# if the user is not a super user, we need to make some functions and views to allow an unprivileged
+# user access to pg_stat_activity and pg_stat_replication
+# XXX(cschmitt): implement this
+# postgres_exporter_user_non_su: false
+
+postgres_exporter_user: "postgres"
+postgres_exporter_group: "postgres"
+
+# dsn to connect to for the exporter
+postgres_exporter_dsn: "user={{ postgres_exporter_user }} host=/var/run/postgresql/ sslmode=disable"
+
+# address for the exporter to listen on. default is :9187
+postgres_exporter_listen_on: ""
+
+# path to install the postgres exporter to
+postgres_exporter_install_path: "/opt/prometheus/postgres_exporter-{{ postgres_exporter_version }}"
+
+# version of the exporter to install
+postgres_exporter_version: 0.1.1
+
+# the path to where the binary can be downloaded
+postgres_exporter_binary_url: "https://github.com/wrouesnel/postgres_exporter/releases/download/v{{ postgres_exporter_version }}/postgres_exporter"
+
+# use_systemd: false

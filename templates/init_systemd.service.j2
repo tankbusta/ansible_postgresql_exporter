@@ -1,0 +1,11 @@
+[Unit]
+Description=PostgreSQL Prometheus Exporter
+
+[Service]
+ExecStart={{ postgres_exporter_install_path }}/postgres_exporter {% if postgres_exporter_listen_on %}-web.listen-address={{ postgres_exporter_listen_on }}{% endif %}
+
+NonBlocking=true
+Restart=always
+User={{ postgres_exporter_user }}
+Group={{ postgres_exporter_group }}
+EnvironmentFile={{ postgres_exporter_install_path }}/env.vars
